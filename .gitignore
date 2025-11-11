@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 target/
 .idea/
 *.iml
@@ -6,3 +7,10 @@ data/*.csv
 output/
 *.class
 .DS_Store
+=======
+*.class
+*.log
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+>>>>>>> 5795b1146a2d9dc38de5fd90d071142d72cb1775

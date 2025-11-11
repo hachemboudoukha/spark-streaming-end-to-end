@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Projet Spark Streaming - Analyse de Données en Temps Réel
 
 Projet dans le cadre du cours spark de streaming a l'esgi avec **Apache Spark**, **Kafka**, **PostgreSQL** avec **Scala** pour analyser un dataset d'addiction au téléphone chez les adolescents.
@@ -418,3 +419,7 @@ Si vous rencontrez des problèmes :
 ---
 
 **Bon streaming ! 🎉**
+=======
+# spark-streming
+end to end pipeline data "teen_phone_addiction"
+>>>>>>> 5795b1146a2d9dc38de5fd90d071142d72cb1775
