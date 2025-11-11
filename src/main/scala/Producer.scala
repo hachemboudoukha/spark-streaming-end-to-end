@@ -11,7 +11,7 @@ object Producer {
     kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
     
     // Configuration PostgreSQL
-    val dbUrl = "jdbc:postgresql://localhost:5432/spark_streaming"
+    val dbUrl = "jdbc:postgresql://localhost:5433/spark_streaming"
     val dbUser = "postgres"
     val dbPassword = "postgres"
     
@@ -31,7 +31,7 @@ object Producer {
       
       // Lire les données de la table
       val statement = connection.createStatement()
-      val resultSet = statement.executeQuery("SELECT * FROM teen_phone_addiction ORDER BY ID")
+      val resultSet = statement.executeQuery("""SELECT * FROM teen_phone_addiction ORDER BY "ID" """)
       
       println("Lecture des données...")
       
