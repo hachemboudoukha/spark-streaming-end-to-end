@@ -6,7 +6,7 @@ target/
 data/*.csv
 output/
 *.class
-.DS_Store
+
 =======
 *.class
 *.log
