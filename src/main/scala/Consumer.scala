@@ -1,70 +1,66 @@
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.streaming.{Seconds, StreamingContext}
-import org.apache.spark.streaming.kafka010._
-import org.apache.kafka.common.serialization.StringDeserializer
-import org.apache.spark.streaming.kafka010.LocationStrategies.PreferConsistent
-import org.apache.spark.streaming.kafka010.ConsumerStrategies.Subscribe
-
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.streaming.Trigger
+import org.apache.log4j.{Level, Logger}
 object Consumer {
   def main(args: Array[String]): Unit = {
-    // Créer la session Spark
+    val Topic = "spark-streaming-topic"
+    val BootstrapServers = "localhost:9092"
+    val OutputPath = "output/processed_data"
+    val CheckpointPath = "output/checkpoint"
+    val ConsoleCheckpointPath = "output/console_checkpoint"
+
+    Logger.getLogger("org").setLevel(Level.WARN)
+
+    // Spark Session
     val spark = SparkSession.builder()
-      .appName("SparkStreamingConsumer")
+      .appName("SimpleKafkaConsumer")
       .master("local[*]")
       .getOrCreate()
-    
-    // Créer le contexte de streaming (batch toutes les 5 secondes)
-    val ssc = new StreamingContext(spark.sparkContext, Seconds(5))
-    
-    // Configuration Kafka
-    val kafkaParams = Map[String, Object](
-      "bootstrap.servers" -> "localhost:9092",
-      "key.deserializer" -> classOf[StringDeserializer],
-      "value.deserializer" -> classOf[StringDeserializer],
-      "group.id" -> "spark-streaming-group",
-      "auto.offset.reset" -> "latest"
-    )
-    
-    val topic = Array("spark-streaming-topic")
-    
-    println("=== CONSUMER DÉMARRÉ ===")
-    println("Connexion à Kafka...")
-    
-    // Créer le stream depuis Kafka
-    val stream = KafkaUtils.createDirectStream[String, String](
-      ssc,
-      PreferConsistent,
-      Subscribe[String, String](topic, kafkaParams)
-    )
-    
-    // Traiter chaque batch de données
-    stream.foreachRDD { rdd =>
-      if (!rdd.isEmpty()) {
-        val sparkSession = SparkSession.builder().config(rdd.sparkContext.getConf).getOrCreate()
-        import sparkSession.implicits._
-        
-        // Convertir les messages en DataFrame simple
-        val lines = rdd.map(_.value())
-        val df = lines.toDF("data")
-        
-        val count = df.count()
-        println(s"\n📦 Batch reçu: $count messages")
-        
-        // Afficher un échantillon
-        if (count > 0) {
-          println("Échantillon des données:")
-          df.show(5, truncate = false)
-          
-          // Sauvegarder les données reçues
-          df.write.mode("append").option("header", "true").csv("output/processed_data")
-          println("✅ Données sauvegardées")
-        }
-      }
+
+    // Lecture stream flux Kafka
+    val df = spark.readStream
+      .format("kafka")
+      .option("kafka.bootstrap.servers", BootstrapServers)
+      .option("subscribe", Topic)
+      .option("startingOffsets", "latest") // Traiter tous les messages
+      .load()
+
+    // Extraction des messages
+    val messages = df.selectExpr("CAST(value AS STRING) AS line")
+
+    // Comptage des messages (pour la console)
+    val countDF = messages.groupBy().count()
+
+    // Écriture en console
+    val consoleQuery = countDF.writeStream
+      .format("console")
+      .outputMode("complete")
+      .trigger(Trigger.ProcessingTime("5 seconds"))
+      .option("truncate", "false")
+      .option("checkpointLocation", ConsoleCheckpointPath) 
+      .start()
+
+    // Écriture dans un fichier CSV
+    val outputQuery = messages.writeStream
+      .format("csv")
+      .outputMode("append")
+      .option("path", OutputPath)
+      .option("checkpointLocation", CheckpointPath)
+      .trigger(Trigger.ProcessingTime("5 seconds"))
+      .start()
+
+    // Attente de la terminaison (avec gestion d'erreur)
+    try {
+      consoleQuery.awaitTermination()
+      outputQuery.awaitTermination()
+    } catch {
+      case e: Exception =>
+        println(s"Erreur lors de l'exécution du flux: ${e.getMessage}")
+        consoleQuery.stop()
+        outputQuery.stop()
+    } finally {
+      spark.stop()
     }
-    
-    // Démarrer le streaming
-    ssc.start()
-    println("✅ Consumer prêt. Appuyez sur Ctrl+C pour arrêter.")
-    ssc.awaitTermination()
   }
 }
