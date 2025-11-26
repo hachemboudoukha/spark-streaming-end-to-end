@@ -1,80 +1,77 @@
+import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord, Callback, RecordMetadata}
+import org.apache.spark.{SparkConf, SparkContext}
 import java.util.Properties
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
-import java.sql.{Connection, DriverManager, ResultSet}
+import scala.util.{Try, Success, Failure}
 
 object Producer {
+  // Constantes
+  val Topic = "spark-streaming-topic"
+  val CsvPath = "data/teen_phone_addiction_dataset.csv"
+  val BatchSize = 200
+  val DelayMs = 3000
+
   def main(args: Array[String]): Unit = {
     // Configuration Kafka
-    val kafkaProps = new Properties()
-    kafkaProps.put("bootstrap.servers", "localhost:9092")
-    kafkaProps.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-    kafkaProps.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
-    
-    // Configuration PostgreSQL
-    val dbUrl = "jdbc:postgresql://localhost:5433/spark_streaming"
-    val dbUser = "postgres"
-    val dbPassword = "postgres"
-    
-    val producer = new KafkaProducer[String, String](kafkaProps)
-    val topic = "spark-streaming-topic"
-    
+    val props = new Properties()
+    props.put("bootstrap.servers", "localhost:9092")
+    props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer")
+    props.put("enable.idempotence", "true") // Idempotence
+    props.put("delivery.timeout.ms", "120000") // Timeout
+
+    // Configuration Spark
+    val conf = new SparkConf()
+      .setAppName("CSVProducer")
+      .setMaster("local[*]")
+    val sc = new SparkContext(conf)
+    sc.setLogLevel("WARN")
+
     println("=== PRODUCER DÉMARRÉ ===")
-    println(s"Base de données: $dbUrl")
-    println(s"Topic Kafka: $topic")
-    
-    var connection: Connection = null
-    
-    try {
-      // Connexion à PostgreSQL
-      connection = DriverManager.getConnection(dbUrl, dbUser, dbPassword)
-      println("✅ Connecté à PostgreSQL")
-      
-      // Lire les données de la table
-      val statement = connection.createStatement()
-      val resultSet = statement.executeQuery("""SELECT * FROM teen_phone_addiction ORDER BY "ID" """)
-      
-      println("Lecture des données...")
-      
-      // Récupérer les noms de colonnes
-      val metaData = resultSet.getMetaData
-      val columnCount = metaData.getColumnCount
-      val columns = (1 to columnCount).map(metaData.getColumnName).toArray
-      
-      var count = 0
-      
-      // Lire chaque ligne et envoyer à Kafka
-      while (resultSet.next()) {
-        // Construire la ligne CSV
-        val values = (1 to columnCount).map { i =>
-          val value = resultSet.getString(i)
-          if (value == null) "" else value
+    println(s"Topic Kafka: $Topic")
+
+    // Lecture du CSV
+    val lines = sc.textFile(CsvPath)
+    val header = lines.first()
+    println(s"Header détecté : $header")
+
+    val data = lines.filter(_ != header).repartition(1) // À ajuster selon le cas d'usage
+
+    // Traitement par partition
+    data.foreachPartition { partition =>
+      val producer = new KafkaProducer[String, String](props)
+      try {
+        var batch = List[String]()
+        var batchId = 1
+        partition.foreach { line =>
+          batch = batch :+ line
+          if (batch.size >= BatchSize) {
+            batch.foreach { record =>
+              val producerRecord = new ProducerRecord[String, String](Topic, record)
+              producer.send(producerRecord, new Callback {
+                override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
+                  if (exception != null) {
+                    println(s"Erreur lors de l'envoi du message: ${exception.getMessage}")
+                  }
+                }
+              })
+            }
+            println(s"[Partition] Batch $batchId envoyé (${batch.size} messages)")
+            batchId += 1
+            batch = List()
+            Thread.sleep(DelayMs)
+          }
         }
-        val csvLine = values.mkString(",")
-        
-        // Envoyer à Kafka
-        val record = new ProducerRecord[String, String](topic, csvLine)
-        producer.send(record)
-        count += 1
-        
-        // Afficher le progrès
-        if (count % 100 == 0) {
-          println(s"Envoyé: $count lignes")
+        // Envoi des messages restants dans le batch
+        if (batch.nonEmpty) {
+          batch.foreach { record =>
+            producer.send(new ProducerRecord[String, String](Topic, record))
+          }
+          println(s"[Partition] Dernier batch envoyé (${batch.size} messages)")
         }
-        
-        // Pause pour simuler le streaming
-        Thread.sleep(50)
+      } finally {
+        producer.close() // Fermeture garantie
       }
-      
-      println(s"✅ Total envoyé: $count lignes")
-      
-    } catch {
-      case e: Exception =>
-        println(s"❌ Erreur: ${e.getMessage}")
-        e.printStackTrace()
-    } finally {
-      if (connection != null) connection.close()
-      producer.close()
-      println("Producteur fermé")
     }
+    sc.stop()
   }
 }
