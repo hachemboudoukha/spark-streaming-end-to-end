@@ -3,14 +3,14 @@ version: '3.8'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
-    restart: on-failure
+    #restart: on-failure
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
-    restart: on-failure
+    #restart: on-failure
     depends_on:
       - zookeeper
     ports:
@@ -26,9 +26,10 @@ services:
   producer:
     build: .
     command: sbt "runMain Producer"
-    restart: on-failure
+    #restart: on-failure
     depends_on:
       - kafka
+      - consumer
     environment:
       BOOTSTRAP_SERVERS: kafka:29092
     volumes:

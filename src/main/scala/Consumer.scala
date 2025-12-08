@@ -5,7 +5,7 @@ import org.apache.log4j.{Level, Logger}
 object Consumer {
   def main(args: Array[String]): Unit = {
     val Topic = "spark-streaming-topic"
-    val BootstrapServers = "localhost:9092"
+    val BootstrapServers = sys.env.getOrElse("BOOTSTRAP_SERVERS", "localhost:9092")
     val OutputPath = "output/processed_data"
     val CheckpointPath = "output/checkpoint"
     val ConsoleCheckpointPath = "output/console_checkpoint"
@@ -23,7 +23,7 @@ object Consumer {
       .format("kafka")
       .option("kafka.bootstrap.servers", BootstrapServers)
       .option("subscribe", Topic)
-      .option("startingOffsets", "latest") // Traiter tous les messages
+      .option("startingOffsets", "earliest") // Traiter tous les messages depuis le début
       .load()
 
     // Extraction des messages
