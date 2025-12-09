@@ -34,7 +34,7 @@ object Producer {
     val header = lines.first()
     println(s"Header détecté : $header")
 
-    val data = lines.filter(_ != header).repartition(1) // À ajuster selon le cas d'usage
+    val data = lines.filter(_ != header).repartition(1) 
 
     // Traitement par partition
     data.foreachPartition { partition =>
@@ -48,6 +48,7 @@ object Producer {
             batch.foreach { record =>
               val producerRecord = new ProducerRecord[String, String](Topic, record)
               producer.send(producerRecord, new Callback {
+                //si toute est correct et ne pas interrompe la fonction 
                 override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
                   if (exception != null) {
                     println(s"Erreur lors de l'envoi du message: ${exception.getMessage}")
@@ -61,7 +62,7 @@ object Producer {
             Thread.sleep(DelayMs)
           }
         }
-        // Envoi des messages restants dans le batch
+        // Envoi des messages restants dans le batch(le dernier pour feermer
         if (batch.nonEmpty) {
           batch.foreach { record =>
             producer.send(new ProducerRecord[String, String](Topic, record))
@@ -69,9 +70,10 @@ object Producer {
           println(s"[Partition] Dernier batch envoyé (${batch.size} messages)")
         }
       } finally {
-        producer.close() // Fermeture garantie
+        producer.close() 
       }
     }
     sc.stop()
   }
 }
+
