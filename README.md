@@ -2,7 +2,7 @@
 
 Ce projet met en place un pipeline de données en temps réel utilisant **Kafka** et **Spark Streaming**.
 
-## 🏗 Architecture
+## Architecture
 
 ![Architecture](first%20architechture.png)
 
@@ -13,7 +13,7 @@ Le flux de données est simple :
 
 **Technologies** : Scala, Apache Spark, Apache Kafka, Docker.
 
-## 🚀 Comment exécuter
+##  Comment exécuter
 
 ### Via Docker (Recommandé)
 Tout est automatisé avec Docker Compose.
