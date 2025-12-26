@@ -1,19 +1,35 @@
-<<<<<<< HEAD
+# SBT
 target/
+project/target/
+project/project/
+
+# Scala
+*.class
+*.log
+
+# Spark
+checkpoint/
+spark-warehouse/
+derby.log
+metastore_db/
+
+# Logs
+logs/
+*.log
+
+# Data (optionnel, selon taille)
+# data/*.csv
+
+# IDE
 .idea/
+.vscode/
 *.iml
-*.log
-data/*.csv
-output/
-*.class
+.bsp/
 
-=======
-*.class
-*.log
+# OS
+.DS_Store
+Thumbs.db
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
-
-*.jar
-*.py
-*.venv
+# Temporary
+tmp/
+temp/.env
