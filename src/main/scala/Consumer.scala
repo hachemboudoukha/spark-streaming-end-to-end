@@ -28,7 +28,7 @@ object Consumer {
     // Configuration PostgreSQL
     val jdbcUrl = sys.env.getOrElse("JDBC_URL", "jdbc:postgresql://localhost:5432/teen_addiction_db")
     val jdbcUser = sys.env.getOrElse("JDBC_USER", "postgres")
-    val jdbcPassword = sys.env.getOrElse("JDBC_PASSWORD", "postgres")
+    val jdbcPassword = sys.env.getOrElse("JDBC_PASSWORD", "postgrespw")
     val jdbcTable = sys.env.getOrElse("JDBC_TABLE", "teen_phone_data")
 
     println(s"=== [Consumer] Reading from Kafka: topic=$topic, servers=$bootstrapServers ===")
@@ -105,8 +105,8 @@ object Consumer {
         .withColumn("Total_Screen_Time", 
           col("Time_on_Social_Media") + col("Time_on_Gaming") + col("Time_on_Education"))
         .withColumn("Sleep_Deficit", 
-          when(col("Age").between(13, 18), 9.0 - col("Sleep_Hours"))
-            .otherwise(8.0 - col("Sleep_Hours")))
+          when(col("Age").between(13, 18), lit(9.0) - col("Sleep_Hours"))
+            .otherwise(lit(8.0) - col("Sleep_Hours")))
         .withColumn("Risk_Score", 
           (col("Daily_Usage_Hours") * 2 + 
            col("Phone_Checks_Per_Day") / 10 + 
@@ -151,7 +151,7 @@ object Consumer {
       println(s"=== [Consumer] Checkpoint location: $checkpointLocation ===")
       println(s"=== [Consumer] Writing to PostgreSQL: $jdbcUrl/$jdbcTable ===")
       println("=== [Consumer] Press Ctrl+C to stop ===")
-
+      
       // Attendre l'arrêt
       query.awaitTermination()
 

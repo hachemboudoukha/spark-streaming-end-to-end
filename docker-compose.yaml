@@ -1,0 +1,69 @@
+version: '3.8'
+
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    hostname: zookeeper
+    container_name: zookeeper
+    ports:
+      - "22181:2181"
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    hostname: kafka
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "29092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:19092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:19092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespw}
+      POSTGRES_DB: teen_addiction_db
+    volumes:
+      - ./sql/schema.sql:/docker-entrypoint-initdb.d/init.sql
+
+  spark-producer:
+    build: .
+    container_name: spark-producer
+    depends_on:
+      - kafka
+    environment:
+      BOOTSTRAP_SERVERS: kafka:19092
+      KAFKA_TOPIC: teen_phone_addiction
+      CSV_PATH: data/teen_phone_addiction_dataset.csv
+    command: [ "java", "-cp", "app.jar", "producer.Producer" ]
+
+  spark-consumer:
+    build: .
+    container_name: spark-consumer
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      BOOTSTRAP_SERVERS: kafka:19092
+      KAFKA_TOPIC: teen_phone_addiction
+      JDBC_URL: jdbc:postgresql://postgres:5432/teen_addiction_db
+      JDBC_USER: ${POSTGRES_USER:-postgres}
+      JDBC_PASSWORD: ${POSTGRES_PASSWORD:-postgrespw}
+      JDBC_TABLE: teen_phone_data
+      CHECKPOINT_DIR: /app/checkpoint
+    command: [ "java", "-cp", "app.jar", "consumer.Consumer" ]

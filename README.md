@@ -1,35 +1,93 @@
-# Spark Streaming Project
+# Teen Phone Addiction - Spark Streaming Pipeline
 
-Ce projet met en place un pipeline de données en temps réel utilisant **Kafka** et **Spark Streaming**.
+![Spark](https://img.shields.io/badge/Apache_Spark-Streaming-E25A1C?style=for-the-badge&logo=apachespark)
+![Kafka](https://img.shields.io/badge/Apache_Kafka-Event_Streaming-231F20?style=for-the-badge&logo=apachekafka)
+![Scala](https://img.shields.io/badge/Scala-2.13-DC322F?style=for-the-badge&logo=scala)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Database-336791?style=for-the-badge&logo=postgresql)
+![Docker](https://img.shields.io/badge/Docker-Containerization-2496ED?style=for-the-badge&logo=docker)
+
+A real-time data pipeline analyzing teen phone usage patterns and addiction risks. This project ingests CSV data, streams it through Kafka, processes/enriches it with Apache Spark Structured Streaming, and stores the insights in PostgreSQL.
 
 ## Architecture
 
-![Architecture](first%20architechture.png)
+The pipeline consists of the following components orchestrated via Docker Compose:
 
-Le flux de données est simple :
-1.  **Producer** : Lit un fichier CSV et envoie les données vers Kafka.
-2.  **Kafka** : Reçoit et stocke les messages.
-3.  **Consumer** : Lit les messages depuis Kafka et les sauvegarde dans le dossier `output/`.
+1.  **Zookeeper**: Manages the Kafka cluster state.
+2.  **Kafka**: Serves as the message broker for real-time data buffering.
+3.  **Spark Producer**: Reads raw CSV data and publishes messages to Kafka.
+4.  **Spark Consumer**: 
+5.  **PostgreSQL**: Persistent storage for the processed analytics data.
 
-**Technologies** : Scala, Apache Spark, Apache Kafka, Docker.
+##  Getting Started
 
-##  Comment exécuter
+### Prerequisites
 
-### Via Docker (Recommandé)
-Tout est automatisé avec Docker Compose.
+- [Docker](https://www.docker.com/) and [Docker Compose](https://docs.docker.com/compose/) installed on your machine.
 
-1.  **Démarrer :**
+### Installation & Run
+
+1.  **Clone the repository:**
     ```bash
-    docker-compose up --build
+    git clone <repository-url>
+    cd spark-streaming-end-to-end
     ```
-2.  **Arrêter :**
+
+2.  **Start the services:**
+    This command will build the Spark applications and start all containers in the background.
+    ```bash
+    docker-compose up --build -d
+    ```
+
+3.  **Check the logs:**
+    Monitor the producer and consumer to see the pipeline in action.
+    ```bash
+    # View Producer logs (sending data)
+    docker-compose logs -f spark-producer
+
+    # View Consumer logs (processing and saving data)
+    docker-compose logs -f spark-consumer
+    ```
+
+4.  **Verify Data in PostgreSQL:**
+    You can connect to the Postgres database to query the results.
+    ```bash
+    docker exec -it postgres psql -U postgres -d teen_addiction_db
+    
+    # Inside psql shell:
+    SELECT * FROM teen_phone_data LIMIT 10;
+    ```
+
+5.  **Stop the application:**
     ```bash
     docker-compose down
     ```
 
-### En local (Développement)
-Si vous préférez lancer les scripts Scala manuellement :
+##  Project Structure
 
-1.  **Lancer Kafka :** `docker-compose up -d zookeeper kafka`
-2.  **Lancer Consumer :** `sbt "runMain Consumer"`
-3.  **Lancer Producer :** `sbt "runMain Producer"`
+```
+.
+├── config/              # (Deprecated/Internal) Config files
+├── data/
+│   └── *.csv           # Source dataset
+├── sql/
+│   └── schema.sql      # Database initialization script
+├── src/main/scala/
+│   ├── producer/       # Producer application code
+│   └── consumer/       # Consumer application code
+├── build.sbt           # Scala Build Tool configuration
+├── Dockerfile          # Multi-stage Docker build for Spark apps
+└── docker-compose.yaml # Orchestration of all services
+```
+
+## Data & Processing
+
+The pipeline calculates a **Risk Score** and **Health Category** (Low/Moderate/High) based on:
+- Daily usage hours
+- Sleep hours (calculating sleep deficit)
+- Physical exercise
+- Bedtime screen usage
+
+D
+
+---
+
