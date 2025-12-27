@@ -13,10 +13,7 @@ object Producer {
         .appName("Producer")
         .master("local[*]")
         .config("spark.sql.adaptive.enabled", "true")  
-        .config("spark.sql.shuffle.partitions", "4")  
-        .config("spark.ui.port", "4041")
-        .config("spark.eventLog.enabled", "true")
-        .config("spark.eventLog.dir", "/tmp/spark-events")
+        .config("spark.sql.shuffle.partitions", "2")  
         .getOrCreate()
 
       val topic = sys.env.getOrElse("KAFKA_TOPIC", "spark-streaming-topic")
@@ -81,7 +78,7 @@ object Producer {
           .save()
 
         println(s"=== [Producer] Batch ${batchNum + 1}/$totalBatches completed ===")
-        Thread.sleep(100)
+        Thread.sleep(5000)
       }
 
       // Libérer le cache

@@ -10,6 +10,8 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    networks:
+      - spark-net
 
   kafka:
     image: confluentinc/cp-kafka:7.5.0
@@ -28,6 +30,8 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    networks:
+      - spark-net
 
   postgres:
     image: postgres:15
@@ -40,30 +44,13 @@ services:
       POSTGRES_DB: teen_addiction_db
     volumes:
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - spark-net
 
-  spark-producer:
-    build: .
-    container_name: spark-producer
-    depends_on:
-      - kafka
-    environment:
-      BOOTSTRAP_SERVERS: kafka:19092
-      KAFKA_TOPIC: teen_phone_addiction
-      CSV_PATH: data/teen_phone_addiction_dataset.csv
-    command: [ "java", "-cp", "app.jar", "producer.Producer" ]
+networks:
+  spark-net:
+    driver: bridge
 
-  spark-consumer:
-    build: .
-    container_name: spark-consumer
-    depends_on:
-      - kafka
-      - postgres
-    environment:
-      BOOTSTRAP_SERVERS: kafka:19092
-      KAFKA_TOPIC: teen_phone_addiction
-      JDBC_URL: jdbc:postgresql://postgres:5432/teen_addiction_db
-      JDBC_USER: ${POSTGRES_USER:-postgres}
-      JDBC_PASSWORD: ${POSTGRES_PASSWORD:-postgrespw}
-      JDBC_TABLE: teen_phone_data
-      CHECKPOINT_DIR: /app/checkpoint
-    command: [ "java", "-cp", "app.jar", "consumer.Consumer" ]
+volumes:
+  postgres_data:

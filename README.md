@@ -87,7 +87,32 @@ The pipeline calculates a **Risk Score** and **Health Category** (Low/Moderate/H
 - Physical exercise
 - Bedtime screen usage
 
-D
+##  Visualization (Power BI)
 
----
+To visualize the real-time insights processed by the pipeline, you can connect Power BI to the PostgreSQL database.
+
+### 1. Connection Settings
+Connect Power BI Desktop to PostgreSQL using the following credentials:
+- **Server:** `localhost` (if running locally)
+- **Port:** `5432`
+- **Database:** `teen_addiction_db`
+- **Authentication:** Database
+- **User:** `postgres`
+- **Password:** `postgrespw` (or check your `.env`)
+
+### 2. Recommended Data Source
+We have prepared a **Materialized View** optimized for visualization:
+- **Table/View:** `teen_addiction_summary`
+- **Connectivity Mode:** 
+    - **DirectQuery:** For real-time updates (recommended).
+    - **Import:** For better performance with static snapshots.
+
+### 3. Key Metrics & Visuals
+- **Addiction Trends:** Line chart using `time_bucket` (X-axis) and `avg_risk_score` (Y-axis).
+- **Demographics:** Pie chart for `Gender` distribution.
+- **Risk Analysis:** Stacked bar chart for `Health_Category` by `Age`.
+- **KPI Cards:** Displaying `Avg Daily Usage` and `Avg Sleep Hours`.
+
+> [!TIP]
+> Use the `teen_addiction_summary` view to significantly improve dashboard performance, as it contains pre-aggregated data.
 
