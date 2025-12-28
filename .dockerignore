@@ -1,0 +1,10 @@
+target/
+project/target/
+project/project/
+.git/
+.venv/
+*.md
+.env
+cleanup.sh
+output/
+checkpoint/

@@ -50,6 +50,7 @@ object Consumer {
       .config("spark.sql.adaptive.enabled", "true")
       .config("spark.sql.shuffle.partitions", "4")
       .config("spark.streaming.stopGracefullyOnShutdown", "true")
+      .config("spark.eventLog.enabled", "false")
       .getOrCreate()
 
     import spark.implicits._
@@ -181,4 +182,3 @@ object Consumer {
     }
   }
 }
- 

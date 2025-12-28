@@ -13,7 +13,7 @@ A real-time data pipeline analyzing teen phone usage patterns and addiction risk
 The pipeline consists of the following components orchestrated via Docker Compose:
 
 1.  **Zookeeper**: Manages the Kafka cluster state.
-2.  **Kafka**: Serves as the message broker for real-time data buffering.
+2.  **Kafka**: Serves as the message broker for real-time data.
 3.  **Spark Producer**: Reads raw CSV data and publishes messages to Kafka.
 4.  **Spark Consumer**: 
 5.  **PostgreSQL**: Persistent storage for the processed analytics data.

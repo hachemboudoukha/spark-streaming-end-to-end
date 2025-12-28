@@ -14,6 +14,7 @@ object Producer {
         .master("local[*]")
         .config("spark.sql.adaptive.enabled", "true")  
         .config("spark.sql.shuffle.partitions", "2")  
+        .config("spark.eventLog.enabled", "false")
         .getOrCreate()
 
       val topic = sys.env.getOrElse("KAFKA_TOPIC", "spark-streaming-topic")
@@ -23,7 +24,7 @@ object Producer {
 
       println(s"=== [Producer] Reading CSV: $csvPath ===")
       
-      //  Lecture du CSV pour obtenir les colonnes
+      //  Lecture du CSV , header  pour obtenir les colonnes
       val dfRaw = spark.read
         .option("header", "true")
         .csv(csvPath)
@@ -34,13 +35,13 @@ object Producer {
       //  Préparation complète du DataFrame avec CACHE
       val dfPrepared = dfRaw
         .withColumn("rowId", monotonically_increasing_id())
-        .withColumn("value", concat_ws(",", columnNames.map(col): _*))  //  CORRECTION ICI
+        .withColumn("value", concat_ws(",", columnNames.map(col): _*)) 
         .withColumn("key", col("rowId").cast("string"))
         .withColumn("batchNum", (col("rowId") / lit(batchSize)).cast("int"))
         .select("key", "value", "batchNum")
         .persist(StorageLevel.MEMORY_AND_DISK)  //  CACHE pour éviter recalculs
 
-      //  Une seule action pour compter
+      //  Une seule action pour compter le nombre de lignes 
       val rowCount = dfPrepared.count()
       println(s"=== [Producer] Read $rowCount rows ===")
 
