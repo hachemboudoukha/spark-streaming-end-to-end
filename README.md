@@ -7,6 +7,7 @@
 ![Docker](https://img.shields.io/badge/Docker-Containerization-2496ED?style=for-the-badge&logo=docker)
 
 A real-time data pipeline analyzing teen phone usage patterns and addiction risks. This project ingests CSV data, streams it through Kafka, processes/enriches it with Apache Spark Structured Streaming, and stores the insights in PostgreSQL.
+### // les variables d'environements sont dans le repo pour le prof de spark 
 
 ## Architecture
 
