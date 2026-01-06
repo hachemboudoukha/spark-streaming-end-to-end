@@ -33,18 +33,18 @@ services:
     networks:
       - spark-net
 
-  postgres:
+  postgres_clean:
     image: postgres:15
-    container_name: postgres
+    container_name: postgres_clean
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgrespw}
+      POSTGRES_USER: powerbi
+      POSTGRES_PASSWORD: powerbi123
       POSTGRES_DB: teen_addiction_db
     volumes:
       - ./sql/schema.sql:/docker-entrypoint-initdb.d/init.sql
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_clean_data:/var/lib/postgresql/data
     networks:
       - spark-net
 
@@ -53,4 +53,4 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
+  postgres_clean_data:

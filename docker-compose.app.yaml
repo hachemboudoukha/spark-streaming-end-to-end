@@ -20,17 +20,21 @@ services:
     environment:
       BOOTSTRAP_SERVERS: kafka:19092
       KAFKA_TOPIC: teen_phone_addiction
-      JDBC_URL: jdbc:postgresql://postgres:5432/teen_addiction_db
-      JDBC_USER: ${POSTGRES_USER:-postgres}
-      JDBC_PASSWORD: ${POSTGRES_PASSWORD:-postgrespw}
+      JDBC_URL: jdbc:postgresql://postgres_clean:5432/teen_addiction_db
+      JDBC_USER: powerbi
+      JDBC_PASSWORD: powerbi123
       JDBC_TABLE: teen_phone_data
       CHECKPOINT_DIR: /app/checkpoint
       SPARK_EVENTLOG_ENABLED: "false"
       _JAVA_OPTIONS: "-Dspark.eventLog.enabled=false --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED --add-opens=java.base/sun.nio.ch=ALL-UNNAMED --add-opens=java.base/sun.nio.cs=ALL-UNNAMED --add-opens=java.base/sun.security.action=ALL-UNNAMED --add-opens=java.base/sun.util.calendar=ALL-UNNAMED --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED"
     command: [ "sbt", "runMain consumer.Consumer" ]
+    volumes:
+      - ./output:/app/output
+      - ./checkpoint:/app/checkpoint
     networks:
       - spark-net
 
 networks:
   spark-net:
     external: true
+    name: spark_streaming_spark-net

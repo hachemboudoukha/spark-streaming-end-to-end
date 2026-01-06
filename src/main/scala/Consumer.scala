@@ -160,18 +160,19 @@ object Consumer {
       connectionProperties.setProperty("user", sys.env.getOrElse("JDBC_USER", "postgres"))
       connectionProperties.setProperty("password", sys.env.getOrElse("JDBC_PASSWORD", "postgrespw"))
       connectionProperties.setProperty("driver", "org.postgresql.Driver")
-
+      val enrichedForDB = batchDF
+        .withColumn("addiction_score", col("Addiction_Level").cast("double"))
       try {
         // Enregistrement PostgreSQL
-        batchDF.write
+        enrichedForDB.write
           .mode("append")
           .jdbc(jdbcUrl, "teen_phone_data", connectionProperties)
         
         // Backup CSV local pour audit
-        batchDF.write
-          .mode("overwrite")
-          .option("header", "true")
-          .csv(s"output/batch_$batchId")
+        // batchDF.write
+        //   .mode("overwrite")
+        //   .option("header", "true")
+        //   .csv(s"output/batch_$batchId")
 
         println(s"=== [Consumer] Status: SUCCESS (DB & CSV synchronized)")
       } catch {
