@@ -114,6 +114,4 @@ We have prepared a **Materialized View** optimized for visualization:
 - **Risk Analysis:** Stacked bar chart for `Health_Category` by `Age`.
 - **KPI Cards:** Displaying `Avg Daily Usage` and `Avg Sleep Hours`.
 
-> [!TIP]
-> Use the `teen_addiction_summary` view to significantly improve dashboard performance, as it contains pre-aggregated data.
 
